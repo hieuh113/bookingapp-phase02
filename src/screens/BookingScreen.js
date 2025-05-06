@@ -9,34 +9,74 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@rneui/themed';
 import { createBookingStart, createBookingSuccess, createBookingFailure } from '../redux/slices/bookingsSlice';
 import apiService from '../api/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-// Simple date picker component (in a real app, you'd use a proper date picker library)
+// Date picker component
 const DatePicker = ({ label, value, onChange }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(value ? new Date(value) : new Date());
+
+  const handleDateChange = (event, date) => {
+    if (date) {
+      setSelectedDate(date);
+      onChange(date.toISOString().split('T')[0]);
+    }
+    setShowPicker(false);
+  };
+
   return (
-    <TouchableOpacity
-      style={styles.datePickerContainer}
-      onPress={() => {
-        // In a real app, this would open a date picker
-        // For now, we'll just set a random date
-        const today = new Date();
-        const randomDays = Math.floor(Math.random() * 30) + 1;
-        const newDate = new Date(today);
-        newDate.setDate(today.getDate() + randomDays);
-        onChange(newDate.toISOString().split('T')[0]);
-      }}
-    >
+    <View style={styles.datePickerContainer}>
       <Text style={styles.datePickerLabel}>{label}</Text>
-      <View style={styles.datePickerValue}>
+      <TouchableOpacity
+        style={styles.datePickerValue}
+        onPress={() => setShowPicker(true)}
+      >
         <Text style={styles.dateText}>{value || 'Select date'}</Text>
         <Icon name="calendar" type="ionicon" size={20} color="#666" />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {Platform.OS === 'ios' ? (
+        <Modal
+          visible={showPicker}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowPicker(false)}
+              >
+                <Text style={styles.modalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showPicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            minimumDate={new Date()}
+          />
+        )
+      )}
+    </View>
   );
 };
 
@@ -451,6 +491,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
     textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalButton: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
