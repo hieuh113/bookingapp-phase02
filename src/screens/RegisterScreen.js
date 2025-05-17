@@ -1,37 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Alert,
-  Image,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { registerStart, registerSuccess, registerFailure, clearError } from '../redux/slices/authSlice';
-import apiService from '../api/apiService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon } from '@rneui/themed';
+import { mockUsers } from '../data/mockUsers';
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useEffect(() => {
-    if (error) {
-      Alert.alert('Error', error);
-      dispatch(clearError());
-    }
-  }, [error, dispatch]);
-
-  const handleRegister = async () => {
+  const handleRegister = () => {
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -42,170 +34,267 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    try {
-      dispatch(registerStart());
-      console.log('Attempting registration for:', email);
-      
-      const response = await apiService.register({ name, email, password });
-      console.log('Registration response:', response);
-      
-      if (!response || !response.token) {
-        throw new Error('Invalid registration response');
-      }
-      
-      await AsyncStorage.setItem('token', response.token);
-      await AsyncStorage.setItem('refreshToken', response.refreshToken || '');
-      
-      dispatch(registerSuccess(response.user));
-    } catch (error) {
-      console.error('Registration error:', error);
-      dispatch(registerFailure(error.message || 'Registration failed'));
-    }
+    // In a real app, you would make an API call to register the user
+    Alert.alert('Success', 'Registration successful! Please login.', [
+      {
+        text: 'OK',
+        onPress: () => navigation.navigate('Login'),
+      },
+    ]);
+  };
+
+  const handleSocialRegister = (provider) => {
+    // In a real app, you would implement social registration here
+    Alert.alert('Coming Soon', `${provider} registration will be available soon!`);
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://via.placeholder.com/150?text=Hotel+App' }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Create Account</Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Icon name="arrow-back" type="ionicon" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.welcomeText}>Create Account</Text>
+            <Text style={styles.subtitle}>Sign up to get started</Text>
+          </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your full name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+          {/* Registration Form */}
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Icon name="person" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+              />
+            </View>
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+            <View style={styles.inputContainer}>
+              <Icon name="mail" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+            <View style={styles.inputContainer}>
+              <Icon name="lock-closed" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  type="ionicon"
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
 
-          <Text style={styles.label}>Confirm Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
+            <View style={styles.inputContainer}>
+              <Icon name="lock-closed" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Icon
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  type="ionicon"
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
 
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <Text style={styles.buttonText}>Loading...</Text>
-            ) : (
-              <Text style={styles.buttonText}>Register</Text>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
+              <Text style={styles.registerButtonText}>Create Account</Text>
+            </TouchableOpacity>
+          </View>
 
+          {/* Social Registration */}
+          <View style={styles.socialContainer}>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or sign up with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.socialButtons}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => handleSocialRegister('Google')}
+              >
+                <Icon name="logo-google" type="ionicon" size={24} color="#DB4437" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => handleSocialRegister('Apple')}
+              >
+                <Icon name="logo-apple" type="ionicon" size={24} color="#000" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => handleSocialRegister('Facebook')}
+              >
+                <Icon name="logo-facebook" type="ionicon" size={24} color="#4267B2" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Login Link */}
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Login</Text>
+              <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
   },
-  scrollContainer: {
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
+  header: {
+    marginTop: 20,
+    marginBottom: 40,
   },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
+  backButton: {
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
+  welcomeText: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#333',
+    marginBottom: 8,
   },
-  formContainer: {
-    width: '100%',
-  },
-  label: {
+  subtitle: {
     fontSize: 16,
-    color: '#333333',
-    marginBottom: 5,
+    color: '#666',
+  },
+  form: {
+    marginBottom: 24,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    flex: 1,
     fontSize: 16,
+    color: '#333',
+  },
+  eyeIcon: {
+    padding: 8,
   },
   registerButton: {
     backgroundColor: '#007BFF',
-    height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  socialContainer: {
+    marginBottom: 24,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#666',
+    fontSize: 14,
+  },
+  socialButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 'auto',
+    paddingVertical: 24,
   },
   loginText: {
-    fontSize: 16,
-    color: '#333333',
+    color: '#666',
+    fontSize: 14,
   },
   loginLink: {
-    fontSize: 16,
     color: '#007BFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

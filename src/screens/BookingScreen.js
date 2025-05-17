@@ -135,39 +135,36 @@ const BookingScreen = ({ navigation, route }) => {
     return true;
   };
   
-  const handleBooking = async () => {
-    if (!checkIn || !checkOut || !guests) {
-      Alert.alert('Error', 'Please fill in all fields');
+  const handleBookNow = () => {
+    if (!checkIn || !checkOut) {
+      Alert.alert('Error', 'Please select check-in and check-out dates');
       return;
     }
 
-    try {
-      dispatch(createBookingStart());
-      console.log('Attempting to create booking for hotel:', hotelId);
-      
-      const bookingData = {
-        hotelId,
-        checkIn,
-        checkOut,
-        guests: parseInt(guests),
-        userId: 'user123', // This should be replaced with actual user ID
-        status: 'pending',
-      };
-
-      const response = await apiService.createBooking(bookingData);
-      console.log('Booking response:', response);
-      
-      if (!response || !response.id) {
-        throw new Error('Invalid booking response');
-      }
-      
-      dispatch(createBookingSuccess(response));
-      navigation.navigate('BookingConfirmation', { booking: response });
-    } catch (error) {
-      console.error('Booking error:', error);
-      dispatch(createBookingFailure(error.message || 'Failed to create booking'));
-      Alert.alert('Error', error.message || 'Failed to create booking');
+    if (guests < 1) {
+      Alert.alert('Error', 'Please select at least one guest');
+      return;
     }
+
+    const bookingDetails = {
+      checkIn,
+      checkOut,
+      guests,
+      specialRequests,
+    };
+
+    navigation.navigate('Payment', {
+      bookingDetails,
+      hotel: {
+        id: hotelId,
+        name: hotelName,
+      },
+      room: {
+        id: roomId,
+        type: roomType,
+        price: price,
+      },
+    });
   };
   
   return (
@@ -294,7 +291,7 @@ const BookingScreen = ({ navigation, route }) => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.bookButton}
-            onPress={handleBooking}
+            onPress={handleBookNow}
             disabled={loading}
           >
             {loading ? (

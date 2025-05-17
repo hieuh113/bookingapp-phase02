@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Video } from 'expo-av';
 import { Icon } from '@rneui/themed';
-import { mockApi } from '../api/apiService';
+import apiService from '../api/apiService';
 
 const { width } = Dimensions.get('window');
 
@@ -17,28 +17,48 @@ const TravelVideo = ({ hotelId }) => {
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [status, setStatus] = useState({});
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadVideo();
   }, [hotelId]);
 
   const loadVideo = async () => {
     try {
       setLoading(true);
-      const videoData = await mockApi.getHotelVideo(hotelId);
-      setVideo(videoData);
+      const data = await apiService.getHotelVideo(hotelId);
+      console.log('Video data received:', data); // Debug log
+      if (!data) throw new Error('No video data received');
+      if (!data.videoUrl) throw new Error('No video URL in data');
+      setVideo(data);
     } catch (error) {
-      setError('Failed to load video');
+      console.error('Error loading video:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePlaybackStatusUpdate = (status) => {
-    if (status.didJustFinish) {
-      videoRef.current?.replayAsync();
+  const handlePlayPause = async () => {
+    try {
+      if (videoRef.current) {
+        if (isPlaying) {
+          await videoRef.current.pauseAsync();
+        } else {
+          await videoRef.current.playAsync();
+        }
+        setIsPlaying(!isPlaying);
+      }
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
     }
+  };
+
+  const handlePlaybackStatusUpdate = (status) => {
+    console.log('Playback status:', status); // Debug log
+    setStatus(status);
   };
 
   if (loading) {
@@ -52,7 +72,6 @@ const TravelVideo = ({ hotelId }) => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="alert-circle" type="ionicon" size={40} color="#FF3B30" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadVideo}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -62,28 +81,54 @@ const TravelVideo = ({ hotelId }) => {
   }
 
   if (!video) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Icon name="videocam-off" type="ionicon" size={40} color="#CCCCCC" />
-        <Text style={styles.emptyText}>No video available</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
     <View style={styles.container}>
-      <Video
-        ref={videoRef}
-        style={styles.video}
-        source={{ uri: video.url }}
-        resizeMode="cover"
-        shouldPlay
-        isLooping
-        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-      />
-      <View style={styles.overlay}>
+      <View style={styles.videoContainer}>
+        <Video
+          ref={videoRef}
+          source={video.videoUrl}
+          style={styles.video}
+          resizeMode="cover"
+          isLooping
+          shouldPlay={isPlaying}
+          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+          onError={(error) => {
+            console.error('Video playback error:', error);
+            setError('Error playing video');
+          }}
+        />
+        <TouchableOpacity
+          style={styles.playButton}
+          onPress={handlePlayPause}
+        >
+          <Icon
+            name={isPlaying ? 'pause' : 'play'}
+            type="ionicon"
+            size={40}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.infoContainer}>
         <Text style={styles.title}>{video.title}</Text>
         <Text style={styles.description}>{video.description}</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.stat}>
+            <Icon name="eye" type="ionicon" size={16} color="#666666" />
+            <Text style={styles.statText}>{video.views}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Icon name="heart" type="ionicon" size={16} color="#666666" />
+            <Text style={styles.statText}>{video.likes}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Icon name="chatbubble" type="ionicon" size={16} color="#666666" />
+            <Text style={styles.statText}>{video.comments}</Text>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -91,74 +136,79 @@ const TravelVideo = ({ hotelId }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: width,
-    height: width * 0.75,
-    backgroundColor: '#000000',
-  },
-  video: {
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 5,
-  },
-  description: {
-    fontSize: 14,
-    color: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
   loadingContainer: {
-    width: width,
-    height: width * 0.75,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
   },
   errorContainer: {
-    width: width,
-    height: width * 0.75,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    padding: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: '#FF3B30',
-    marginTop: 10,
-    marginBottom: 15,
+    color: 'red',
+    marginBottom: 10,
   },
   retryButton: {
     backgroundColor: '#007BFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    padding: 10,
     borderRadius: 5,
   },
   retryButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: 'bold',
   },
-  emptyContainer: {
-    width: width,
-    height: width * 0.75,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+  videoContainer: {
+    position: 'relative',
+    height: 200,
   },
-  emptyText: {
-    fontSize: 16,
+  video: {
+    width: width,
+    height: 200,
+  },
+  playButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 30,
+    padding: 10,
+  },
+  infoContainer: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
     color: '#666666',
-    marginTop: 10,
+    marginBottom: 12,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  statText: {
+    fontSize: 14,
+    color: '#666666',
+    marginLeft: 4,
   },
 });
 

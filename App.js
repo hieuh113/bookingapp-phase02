@@ -37,9 +37,7 @@ export default function App() {
     
     const preloadData = async () => {
       try {
-        // Preload hotels data
         await apiService.getHotels();
-        // Preload videos data
         await apiService.getShortVideos();
         setIsLoading(false);
       } catch (err) {

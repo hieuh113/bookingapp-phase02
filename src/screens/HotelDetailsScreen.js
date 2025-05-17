@@ -8,12 +8,17 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Modal,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Icon } from '@rneui/themed';
 import apiService from '../api/apiService';
 import { selectHotel } from '../redux/slices/hotelsSlice';
 import TravelVideo from '../components/TravelVideo';
 import TravelAssistant from '../components/TravelAssistant';
+
+const { width } = Dimensions.get('window');
 
 const HotelDetailsScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -22,6 +27,8 @@ const HotelDetailsScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     loadHotelDetails();
@@ -44,11 +51,47 @@ const HotelDetailsScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleBookNow = () => {
+  const handleBookNow = (room) => {
     if (hotel) {
-      navigation.navigate('Booking', { hotelId: hotel.id });
+      navigation.navigate('Booking', { 
+        hotelId: hotel.id,
+        roomId: room?.id,
+        roomType: room?.type,
+        price: room?.price
+      });
     }
   };
+
+  const renderGalleryItem = ({ item }) => (
+    <TouchableOpacity onPress={() => {
+      setSelectedImage(item);
+      setShowGallery(true);
+    }}>
+      <Image 
+        source={{ uri: item }} 
+        style={styles.galleryImage} 
+        resizeMode="cover" 
+      />
+    </TouchableOpacity>
+  );
+
+  const renderRoomItem = ({ item }) => (
+    <View style={styles.roomCard}>
+      <Image 
+        source={{ uri: item.image }} 
+        style={styles.roomImage} 
+        resizeMode="cover" 
+      />
+      <View style={styles.roomInfo}>
+        <Text style={styles.roomType}>{item.type}</Text>
+        <Text style={styles.roomPrice}>${item.price}/night</Text>
+        <Text style={styles.roomDescription}>{item.description}</Text>
+        <TouchableOpacity style={styles.bookButton} onPress={() => handleBookNow(item)}>
+          <Text style={styles.bookButtonText}>Book Now</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -83,28 +126,41 @@ const HotelDetailsScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <TravelVideo hotelId={hotelId} />
-        
+        {/* Hotel Images Gallery */}
+        <View style={styles.galleryContainer}>
+          <FlatList
+            data={hotel.images}
+            renderItem={renderGalleryItem}
+            keyExtractor={(item, index) => index.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+          />
+        </View>
+
         <View style={styles.contentContainer}>
           <Text style={styles.hotelName}>{hotel.name}</Text>
           <Text style={styles.hotelLocation}>{hotel.location}</Text>
           
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>{hotel.rating}</Text>
+            <View style={styles.ratingInfo}>
+              <Icon name="star" type="ionicon" color="#FFD700" size={20} />
+              <Text style={styles.ratingText}>{hotel.rating}</Text>
+              <Text style={styles.reviewsText}>({hotel.reviews} reviews)</Text>
+            </View>
             <Text style={styles.priceText}>${hotel.price}/night</Text>
           </View>
 
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>{hotel.description}</Text>
 
-          <Text style={styles.sectionTitle}>Amenities</Text>
-          <View style={styles.amenitiesContainer}>
-            {hotel.amenities?.map((amenity, index) => (
-              <View key={index} style={styles.amenityItem}>
-                <Text style={styles.amenityText}>{amenity}</Text>
-              </View>
-            ))}
-          </View>
+          <Text style={styles.sectionTitle}>Available Rooms</Text>
+          <FlatList
+            data={hotel.rooms}
+            renderItem={renderRoomItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+          />
         </View>
       </ScrollView>
 
@@ -115,17 +171,43 @@ const HotelDetailsScreen = ({ navigation, route }) => {
         >
           <Text style={styles.assistantButtonText}>Ask Assistant</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
+        <TouchableOpacity 
+          style={styles.bookButton} 
+          onPress={() => handleBookNow(hotel.rooms[0])}
+        >
           <Text style={styles.bookButtonText}>Book Now</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Gallery Modal */}
+      <Modal
+        visible={showGallery}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowGallery(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowGallery(false)}
+          >
+            <Icon name="close" type="ionicon" size={30} color="#fff" />
+          </TouchableOpacity>
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.modalImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
+
+      {/* Travel Assistant Modal */}
       <Modal
         visible={showAssistant}
         animationType="slide"
         onRequestClose={() => setShowAssistant(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
               style={styles.closeButton}
@@ -134,8 +216,8 @@ const HotelDetailsScreen = ({ navigation, route }) => {
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
-          <TravelAssistant />
-        </SafeAreaView>
+          <TravelAssistant hotel={hotel} />
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -170,6 +252,13 @@ const styles = StyleSheet.create({
     color: '#007BFF',
     fontWeight: 'bold',
   },
+  galleryContainer: {
+    height: 250,
+  },
+  galleryImage: {
+    width: width,
+    height: 250,
+  },
   contentContainer: {
     padding: 20,
   },
@@ -189,10 +278,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  ratingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   ratingText: {
     fontSize: 16,
-    color: '#FFA500',
-    fontWeight: 'bold',
+    color: '#333333',
+    marginLeft: 5,
+  },
+  reviewsText: {
+    fontSize: 14,
+    color: '#666666',
+    marginLeft: 5,
   },
   priceText: {
     fontSize: 18,
@@ -211,22 +309,39 @@ const styles = StyleSheet.create({
     color: '#666666',
     lineHeight: 24,
   },
-  amenitiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
+  roomCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  amenityItem: {
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 10,
-    marginBottom: 10,
+  roomImage: {
+    width: '100%',
+    height: 200,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
-  amenityText: {
+  roomInfo: {
+    padding: 16,
+  },
+  roomType: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  roomPrice: {
+    fontSize: 16,
+    color: '#007BFF',
+    marginBottom: 8,
+  },
+  roomDescription: {
     fontSize: 14,
-    color: '#333333',
+    color: '#666666',
+    marginBottom: 16,
   },
   footer: {
     padding: 20,
@@ -262,7 +377,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(0,0,0,0.9)',
   },
   modalHeader: {
     padding: 15,
@@ -270,12 +385,19 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEEEEE',
   },
   closeButton: {
-    alignSelf: 'flex-end',
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
   },
   closeButtonText: {
     color: '#007BFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalImage: {
+    width: width,
+    height: '100%',
   },
 });
 

@@ -18,7 +18,7 @@ import { Video } from 'expo-av';
 import { Icon } from '@rneui/themed';
 import apiService from '../api/apiService';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const VIDEO_HEIGHT = width * 1.5; // 3:2 aspect ratio
 
 const ShortVideosScreen = () => {
@@ -30,10 +30,29 @@ const ShortVideosScreen = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [likedVideos, setLikedVideos] = useState(new Set());
+  const [isPaused, setIsPaused] = useState(false);
   const videoRefs = useRef([]);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
+  };
+
+  const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setCurrentVideoIndex(viewableItems[0].index);
+    }
+  }, []);
 
   useEffect(() => {
     loadVideos();
+    // Cleanup function to stop all videos when leaving the screen
+    return () => {
+      videoRefs.current.forEach(ref => {
+        if (ref) {
+          ref.stopAsync();
+        }
+      });
+    };
   }, []);
 
   const loadVideos = async () => {
@@ -47,6 +66,17 @@ const ShortVideosScreen = () => {
       console.error('Error loading videos:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVideoPress = async () => {
+    if (videoRefs.current[currentVideoIndex]) {
+      if (isPaused) {
+        await videoRefs.current[currentVideoIndex].playAsync();
+      } else {
+        await videoRefs.current[currentVideoIndex].pauseAsync();
+      }
+      setIsPaused(!isPaused);
     }
   };
 
@@ -110,15 +140,37 @@ const ShortVideosScreen = () => {
 
     return (
       <View style={styles.videoContainer}>
-        <Video
-          ref={ref => videoRefs.current[index] = ref}
-          source={{ uri: item.url }}
-          style={styles.video}
-          resizeMode="cover"
-          shouldPlay={isCurrentVideo}
-          isLooping
-          useNativeControls
-        />
+        <TouchableOpacity 
+          activeOpacity={1} 
+          onPress={handleVideoPress}
+          style={styles.videoWrapper}
+        >
+          <Video
+            ref={ref => videoRefs.current[index] = ref}
+            source={item.videoUrl}
+            style={styles.video}
+            resizeMode="cover"
+            shouldPlay={isCurrentVideo && !isPaused}
+            isLooping
+            useNativeControls={false}
+            onError={(error) => {
+              console.error('Video error:', error);
+              setError('Failed to load video');
+            }}
+          />
+          
+          {/* Play/Pause Icon Overlay */}
+          {isPaused && isCurrentVideo && (
+            <View style={styles.playPauseOverlay}>
+              <Icon 
+                name={isPaused ? "play" : "pause"} 
+                type="ionicon" 
+                size={50} 
+                color="white" 
+              />
+            </View>
+          )}
+        </TouchableOpacity>
         
         {/* Video Info Overlay */}
         <View style={styles.videoInfo}>
@@ -161,12 +213,6 @@ const ShortVideosScreen = () => {
     );
   };
 
-  const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentVideoIndex(viewableItems[0].index);
-    }
-  }, []);
-
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -195,9 +241,7 @@ const ShortVideosScreen = () => {
         pagingEnabled
         showsVerticalScrollIndicator={false}
         onViewableItemsChanged={handleViewableItemsChanged}
-        viewabilityConfig={{
-          itemVisiblePercentThreshold: 50,
-        }}
+        viewabilityConfig={viewabilityConfig}
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={3}
@@ -314,7 +358,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    flex: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.5, // Half screen height
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -388,6 +436,21 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
+  },
+  videoWrapper: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  playPauseOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
 });
 

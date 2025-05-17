@@ -64,8 +64,6 @@ const ProfileScreen = ({ navigation }) => {
   };
   
   const handleSaveEdit = () => {
-    // In a real app, this would update the user's profile
-    // For now, we'll just close the modal
     setShowEditModal(false);
   };
   
@@ -105,37 +103,30 @@ const ProfileScreen = ({ navigation }) => {
   );
   
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Profile</Text>
-      </View>
-      
-      <View style={styles.profileSection}>
+    <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#222' : '#fff' }}>
+      <View style={{ alignItems: 'center', padding: 30 }}>
         <Image
-          source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }}
-          style={styles.profileImage}
+          source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/men/1.jpg' }}
+          style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 20 }}
         />
-        <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
-        <Text style={styles.profileEmail}>{user?.email || 'guest@example.com'}</Text>
-        <TouchableOpacity style={styles.editProfileButton}>
-          <Text style={styles.editProfileText}>Edit Profile</Text>
-        </TouchableOpacity>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: darkMode ? '#fff' : '#333' }}>{user?.name || 'Guest'}</Text>
+        <Text style={{ fontSize: 16, color: darkMode ? '#aaa' : '#666', marginTop: 5 }}>{user?.email || ''}</Text>
       </View>
       
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
+        <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#333' }]}>Account Information</Text>
         
         <TouchableOpacity
           style={styles.infoItem}
           onPress={() => openEditModal('Name', user?.name || 'Guest User')}
         >
           <View style={styles.infoItemLeft}>
-            <Icon name="person" type="ionicon" size={20} color="#666" />
-            <Text style={styles.infoItemLabel}>Name</Text>
+            <Icon name="person" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Name</Text>
           </View>
           <View style={styles.infoItemRight}>
-            <Text style={styles.infoItemValue}>{user?.name || 'Guest User'}</Text>
-            <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>{user?.name || 'Guest User'}</Text>
+            <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
           </View>
         </TouchableOpacity>
         
@@ -144,45 +135,45 @@ const ProfileScreen = ({ navigation }) => {
           onPress={() => openEditModal('Email', user?.email || 'guest@example.com')}
         >
           <View style={styles.infoItemLeft}>
-            <Icon name="mail" type="ionicon" size={20} color="#666" />
-            <Text style={styles.infoItemLabel}>Email</Text>
+            <Icon name="mail" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Email</Text>
           </View>
           <View style={styles.infoItemRight}>
-            <Text style={styles.infoItemValue}>{user?.email || 'guest@example.com'}</Text>
-            <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>{user?.email || 'guest@example.com'}</Text>
+            <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoItemLeft}>
-            <Icon name="call" type="ionicon" size={20} color="#666" />
-            <Text style={styles.infoItemLabel}>Phone</Text>
+            <Icon name="call" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Phone</Text>
           </View>
           <View style={styles.infoItemRight}>
-            <Text style={styles.infoItemValue}>+1 (555) 123-4567</Text>
-            <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>+1 (555) 123-4567</Text>
+            <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoItemLeft}>
-            <Icon name="lock-closed" type="ionicon" size={20} color="#666" />
-            <Text style={styles.infoItemLabel}>Password</Text>
+            <Icon name="lock-closed" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Password</Text>
           </View>
           <View style={styles.infoItemRight}>
-            <Text style={styles.infoItemValue}>••••••••</Text>
-            <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>••••••••</Text>
+            <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
           </View>
         </TouchableOpacity>
       </View>
       
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Settings</Text>
+        <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#333' }]}>App Settings</Text>
         
         <View style={styles.settingItem}>
           <View style={styles.settingItemLeft}>
-            <Icon name="notifications" type="ionicon" size={20} color="#666" />
-            <Text style={styles.settingItemLabel}>Push Notifications</Text>
+            <Icon name="notifications" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.settingItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Push Notifications</Text>
           </View>
           <Switch
             value={notifications}
@@ -194,8 +185,8 @@ const ProfileScreen = ({ navigation }) => {
         
         <View style={styles.settingItem}>
           <View style={styles.settingItemLeft}>
-            <Icon name="mail" type="ionicon" size={20} color="#666" />
-            <Text style={styles.settingItemLabel}>Email Notifications</Text>
+            <Icon name="mail" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.settingItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Email Notifications</Text>
           </View>
           <Switch
             value={emailNotifications}
@@ -207,8 +198,8 @@ const ProfileScreen = ({ navigation }) => {
         
         <View style={styles.settingItem}>
           <View style={styles.settingItemLeft}>
-            <Icon name="moon" type="ionicon" size={20} color="#666" />
-            <Text style={styles.settingItemLabel}>Dark Mode</Text>
+            <Icon name="moon" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.settingItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Dark Mode</Text>
           </View>
           <Switch
             value={darkMode}
@@ -220,38 +211,38 @@ const ProfileScreen = ({ navigation }) => {
       </View>
       
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support</Text>
+        <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#333' }]}>Support</Text>
         
         <TouchableOpacity style={styles.supportItem}>
           <View style={styles.supportItemLeft}>
-            <Icon name="help-circle" type="ionicon" size={20} color="#666" />
-            <Text style={styles.supportItemLabel}>Help Center</Text>
+            <Icon name="help-circle" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.supportItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Help Center</Text>
           </View>
-          <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+          <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.supportItem}>
           <View style={styles.supportItemLeft}>
-            <Icon name="chatbubble-ellipses" type="ionicon" size={20} color="#666" />
-            <Text style={styles.supportItemLabel}>Contact Support</Text>
+            <Icon name="chatbubble-ellipses" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.supportItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Contact Support</Text>
           </View>
-          <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+          <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.supportItem}>
           <View style={styles.supportItemLeft}>
-            <Icon name="document-text" type="ionicon" size={20} color="#666" />
-            <Text style={styles.supportItemLabel}>Terms & Conditions</Text>
+            <Icon name="document-text" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.supportItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Terms & Conditions</Text>
           </View>
-          <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+          <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.supportItem}>
           <View style={styles.supportItemLeft}>
-            <Icon name="shield-checkmark" type="ionicon" size={20} color="#666" />
-            <Text style={styles.supportItemLabel}>Privacy Policy</Text>
+            <Icon name="shield-checkmark" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+            <Text style={[styles.supportItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Privacy Policy</Text>
           </View>
-          <Icon name="chevron-forward" type="ionicon" size={20} color="#CCC" />
+          <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
         </TouchableOpacity>
       </View>
       
@@ -261,7 +252,7 @@ const ProfileScreen = ({ navigation }) => {
       </TouchableOpacity>
       
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={[styles.versionText, { color: darkMode ? '#aaa' : '#999' }]}>Version 1.0.0</Text>
       </View>
       
       {renderEditModal()}
@@ -270,71 +261,14 @@ const ProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#FFFFFF',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  profileSection: {
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 15,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  profileEmail: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 15,
-  },
-  editProfileButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#007BFF',
-  },
-  editProfileText: {
-    fontSize: 14,
-    color: '#007BFF',
-    fontWeight: 'bold',
-  },
   section: {
-    backgroundColor: '#FFFFFF',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#EEEEEE',
+    padding: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   infoItem: {
     flexDirection: 'row',
@@ -460,9 +394,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

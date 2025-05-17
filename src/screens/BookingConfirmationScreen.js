@@ -1,142 +1,138 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  Image,
-  Share,
-  SafeAreaView,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
-import { useDispatch, useSelector } from 'react-redux';
 import apiService from '../api/apiService';
-import { clearCurrentBooking } from '../redux/slices/bookingsSlice';
 
-const BookingConfirmationScreen = ({ navigation, route }) => {
-  const dispatch = useDispatch();
-  const { booking } = route.params || {};
+const BookingConfirmationScreen = ({ route, navigation }) => {
+  const { bookingId } = route.params;
+  const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { user } = useSelector((state) => state.auth);
-  
-  // Generate a random booking reference number
-  const bookingReference = `BK${Math.floor(100000 + Math.random() * 900000)}`;
-  
+
   useEffect(() => {
-    if (booking) {
-      setLoading(false);
-    } else {
-      setError('No booking data available');
-      setLoading(false);
-    }
-  }, [booking]);
+    loadBooking();
+  }, []);
 
-  const handleShare = async () => {
+  const loadBooking = async () => {
     try {
-      await Share.share({
-        message: `I've just booked a stay at ${booking?.hotelName}! Check-in: ${booking?.checkIn}, Check-out: ${booking?.checkOut}. Booking reference: ${bookingReference}`,
-        title: 'My Hotel Booking',
-      });
+      const bookingData = await apiService.getBookingById(bookingId);
+      setBooking(bookingData);
     } catch (error) {
-      console.error('Error sharing booking:', error);
+      console.error('Error loading booking:', error);
+    } finally {
+      setLoading(false);
     }
-  };
-  
-  const handleViewBookings = () => {
-    navigation.navigate('Bookings');
-  };
-  
-  const handleBackToHome = () => {
-    navigation.navigate('Home');
-  };
-
-  const handleDone = () => {
-    dispatch(clearCurrentBooking());
-    navigation.navigate('Home');
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading confirmation...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.retryButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (!booking) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>No booking data available</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.retryButtonText}>Go Back</Text>
-        </TouchableOpacity>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#007BFF" />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Booking Confirmed!</Text>
-          <Text style={styles.subtitle}>Your booking has been successfully confirmed</Text>
+      <ScrollView>
+        {/* Success Header */}
+        <View style={styles.successHeader}>
+          <View style={styles.successIcon}>
+            <Icon name="checkmark-circle" type="ionicon" size={80} color="#4CAF50" />
+          </View>
+          <Text style={styles.successTitle}>Booking Confirmed!</Text>
+          <Text style={styles.successSubtitle}>
+            Your booking has been successfully confirmed
+          </Text>
         </View>
 
-        <View style={styles.confirmationCard}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hotel Information</Text>
-            <Text style={styles.hotelName}>{booking.hotelName}</Text>
-            <Text style={styles.hotelLocation}>{booking.hotelLocation}</Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Booking Details</Text>
+        {/* Booking Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Booking ID:</Text>
-              <Text style={styles.detailValue}>{booking.id}</Text>
+              <Text style={styles.detailLabel}>Booking ID</Text>
+              <Text style={styles.detailValue}>#{booking.id}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Check-in:</Text>
+              <Text style={styles.detailLabel}>Hotel</Text>
+              <Text style={styles.detailValue}>{booking.hotelName}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Room Type</Text>
+              <Text style={styles.detailValue}>{booking.roomType}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Check-in</Text>
               <Text style={styles.detailValue}>{booking.checkIn}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Check-out:</Text>
+              <Text style={styles.detailLabel}>Check-out</Text>
               <Text style={styles.detailValue}>{booking.checkOut}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Guests:</Text>
+              <Text style={styles.detailLabel}>Guests</Text>
               <Text style={styles.detailValue}>{booking.guests}</Text>
             </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Payment Information</Text>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Total Amount:</Text>
-              <Text style={styles.totalPrice}>${booking.totalPrice || '0.00'}</Text>
+              <Text style={styles.detailLabel}>Total Amount</Text>
+              <Text style={styles.detailValue}>${booking.totalPrice}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-            <Text style={styles.doneButtonText}>Done</Text>
-          </TouchableOpacity>
+        {/* Contact Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contact Information</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Name</Text>
+              <Text style={styles.detailValue}>{booking.contactName}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Email</Text>
+              <Text style={styles.detailValue}>{booking.contactEmail}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Phone</Text>
+              <Text style={styles.detailValue}>{booking.contactPhone}</Text>
+            </View>
+          </View>
         </View>
+
+        {/* Special Requests */}
+        {booking.specialRequests && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Special Requests</Text>
+            <View style={styles.detailsCard}>
+              <Text style={styles.specialRequests}>{booking.specialRequests}</Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Action Buttons */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Text style={styles.primaryButtonText}>Back to Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate('BookingHistory')}
+        >
+          <Text style={styles.secondaryButtonText}>View My Bookings</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -144,113 +140,90 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#f5f5f5',
   },
-  loadingContainer: {
+  centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  successHeader: {
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
+    backgroundColor: '#fff',
   },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-    textAlign: 'center',
+  successIcon: {
+    marginBottom: 16,
   },
-  retryButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  headerTitle: {
+  successTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  subtitle: {
+  successSubtitle: {
     fontSize: 16,
-    color: '#666666',
+    color: '#666',
     textAlign: 'center',
   },
-  confirmationCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   section: {
-    marginBottom: 20,
+    padding: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  hotelName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  hotelLocation: {
-    fontSize: 16,
-    color: '#666666',
+  detailsCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   detailLabel: {
+    color: '#666',
     fontSize: 16,
-    color: '#666666',
   },
   detailValue: {
+    fontWeight: '500',
     fontSize: 16,
-    color: '#333333',
   },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007BFF',
+  specialRequests: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
   },
-  actions: {
-    marginTop: 20,
+  footer: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
   },
-  doneButton: {
+  primaryButton: {
     backgroundColor: '#007BFF',
-    padding: 15,
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 12,
   },
-  doneButtonText: {
-    color: '#FFFFFF',
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#007BFF',
+  },
+  secondaryButtonText: {
+    color: '#007BFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

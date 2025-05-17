@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import HotelDetailsScreen from '../screens/HotelDetailsScreen';
 import BookingScreen from '../screens/BookingScreen';
+import PaymentScreen from '../screens/PaymentScreen';
 import BookingConfirmationScreen from '../screens/BookingConfirmationScreen';
 import BookingHistoryScreen from '../screens/BookingHistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -17,6 +18,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import SplashScreen from '../screens/SplashScreen';
 import ShortVideosScreen from '../screens/ShortVideosScreen';
+import ItineraryScreen from '../screens/ItineraryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -77,9 +79,19 @@ const HomeStackNavigator = () => {
         options={{ title: 'Book Now' }}
       />
       <Stack.Screen 
+        name="Payment" 
+        component={PaymentScreen} 
+        options={{ title: 'Payment' }}
+      />
+      <Stack.Screen 
         name="BookingConfirmation" 
         component={BookingConfirmationScreen} 
         options={{ title: 'Booking Confirmation' }}
+      />
+      <Stack.Screen 
+        name="Itinerary" 
+        component={ItineraryScreen} 
+        options={{ title: 'Create Itinerary' }}
       />
     </Stack.Navigator>
   );
@@ -103,6 +115,11 @@ const SearchStackNavigator = () => {
         name="Booking" 
         component={BookingScreen} 
         options={{ title: 'Book Now' }}
+      />
+      <Stack.Screen 
+        name="Payment" 
+        component={PaymentScreen} 
+        options={{ title: 'Payment' }}
       />
       <Stack.Screen 
         name="BookingConfirmation" 

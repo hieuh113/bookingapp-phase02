@@ -1,44 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
+  TextInput,
+  ScrollView,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import apiService from '../api/apiService';
-import { fetchBookingsStart, fetchBookingsSuccess, fetchBookingsFailure } from '../redux/slices/bookingsSlice';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon } from '@rneui/themed';
+import { mockBookings } from '../data/mockBookings';
 
 const BookingHistoryScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
-  const { bookings, loading, error } = useSelector((state) => state.bookings);
-  const { user } = useSelector((state) => state.auth);
-  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('date');
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
+  const statuses = ['All', 'Confirmed', 'Pending', 'Completed', 'Cancelled'];
 
-  const loadBookings = async () => {
-    try {
-      dispatch(fetchBookingsStart());
-      console.log('Fetching bookings for user:', user?.id);
-      const data = await apiService.getBookings(user?.id || 'user123');
-      console.log('Bookings data received:', data);
-      if (!data) throw new Error('No bookings data received');
-      dispatch(fetchBookingsSuccess(data));
-    } catch (error) {
-      console.error('Error loading bookings:', error);
-      dispatch(fetchBookingsFailure(error.message));
+  const filteredBookings = mockBookings
+    .filter(booking => {
+      const matchesSearch = 
+        booking.hotelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.roomType.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'All' || booking.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date') {
+        return new Date(b.bookingDate) - new Date(a.bookingDate);
+      } else if (sortBy === 'price') {
+        return b.totalPrice - a.totalPrice;
+      }
+      return 0;
+    });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Confirmed':
+        return '#4CAF50';
+      case 'Pending':
+        return '#FFC107';
+      case 'Completed':
+        return '#2196F3';
+      case 'Cancelled':
+        return '#F44336';
+      default:
+        return '#666666';
     }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadBookings();
-    setRefreshing(false);
   };
 
   const renderBookingItem = ({ item }) => (
@@ -48,59 +60,112 @@ const BookingHistoryScreen = ({ navigation }) => {
     >
       <View style={styles.bookingHeader}>
         <Text style={styles.hotelName}>{item.hotelName}</Text>
-        <Text style={styles.bookingStatus}>{item.status}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <Text style={styles.statusText}>{item.status}</Text>
+        </View>
       </View>
-      
+
       <View style={styles.bookingDetails}>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Check-in:</Text>
-          <Text style={styles.detailValue}>{item.checkIn}</Text>
+          <Icon name="bed" type="ionicon" size={16} color="#666" />
+          <Text style={styles.detailText}>{item.roomType}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Check-out:</Text>
-          <Text style={styles.detailValue}>{item.checkOut}</Text>
+          <Icon name="calendar" type="ionicon" size={16} color="#666" />
+          <Text style={styles.detailText}>
+            {item.checkIn} - {item.checkOut}
+          </Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Total:</Text>
-          <Text style={styles.totalPrice}>${item.totalPrice}</Text>
+          <Icon name="people" type="ionicon" size={16} color="#666" />
+          <Text style={styles.detailText}>{item.guests} {item.guests === 1 ? 'Guest' : 'Guests'}</Text>
         </View>
+      </View>
+
+      <View style={styles.bookingFooter}>
+        <Text style={styles.price}>${item.totalPrice}</Text>
+        <TouchableOpacity style={styles.viewButton}>
+          <Text style={styles.viewButtonText}>View Details</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading bookings...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadBookings}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Icon name="search" type="ionicon" size={20} color="#666" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search bookings..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      {/* Status Filter */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.statusFilter}
+        contentContainerStyle={styles.statusFilterContent}
+      >
+        {statuses.map(status => (
+          <TouchableOpacity
+            key={status}
+            style={[
+              styles.statusButton,
+              statusFilter === status && styles.statusButtonActive
+            ]}
+            onPress={() => setStatusFilter(status)}
+          >
+            <Text
+              style={[
+                styles.statusButtonText,
+                statusFilter === status && styles.statusButtonTextActive
+              ]}
+            >
+              {status}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Sort Options */}
+      <View style={styles.sortContainer}>
+        <Text style={styles.sortLabel}>Sort by:</Text>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === 'date' && styles.sortButtonActive]}
+          onPress={() => setSortBy('date')}
+        >
+          <Text style={[styles.sortButtonText, sortBy === 'date' && styles.sortButtonTextActive]}>
+            Date
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === 'price' && styles.sortButtonActive]}
+          onPress={() => setSortBy('price')}
+        >
+          <Text style={[styles.sortButtonText, sortBy === 'price' && styles.sortButtonTextActive]}>
+            Price
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bookings List */}
       <FlatList
-        data={bookings}
+        data={filteredBookings}
         renderItem={renderBookingItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        ListEmptyComponent={
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
+            <Icon name="calendar" type="ionicon" size={48} color="#ccc" />
             <Text style={styles.emptyText}>No bookings found</Text>
           </View>
-        }
+        )}
       />
     </SafeAreaView>
   );
@@ -109,95 +174,167 @@ const BookingHistoryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#f5f5f5',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  searchContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    margin: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  errorContainer: {
+  searchInput: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    marginLeft: 8,
+    fontSize: 16,
   },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
+  statusFilter: {
+    maxHeight: 50,
   },
-  retryButton: {
+  statusFilterContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  statusButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  statusButtonActive: {
     backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
+    borderColor: '#007BFF',
   },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  statusButtonText: {
+    color: '#666',
+  },
+  statusButtonTextActive: {
+    color: '#fff',
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  sortLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginRight: 8,
+  },
+  sortButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  sortButtonActive: {
+    backgroundColor: '#007BFF',
+    borderColor: '#007BFF',
+  },
+  sortButtonText: {
+    color: '#666',
+  },
+  sortButtonTextActive: {
+    color: '#fff',
   },
   listContainer: {
-    padding: 15,
+    padding: 16,
+    paddingTop: 0,
   },
   bookingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   bookingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   hotelName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#333',
+    flex: 1,
+    marginRight: 8,
   },
-  bookingStatus: {
-    fontSize: 14,
-    color: '#007BFF',
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: 'bold',
   },
   bookingDetails: {
-    marginTop: 10,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailText: {
+    marginLeft: 8,
+    color: '#666',
+    fontSize: 14,
+  },
+  bookingFooter: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 12,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333333',
-  },
-  totalPrice: {
-    fontSize: 16,
+  price: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#007BFF',
+  },
+  viewButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  viewButtonText: {
+    color: '#007BFF',
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 32,
   },
   emptyText: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#666666',
+    color: '#666',
   },
 });
 
