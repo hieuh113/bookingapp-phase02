@@ -13,3 +13,7 @@ node_modules
 node_modules
 node_modules
 node_modules
+backend/serviceAccountKey.json
+backend/.env
+backend/node_modules
+.env
