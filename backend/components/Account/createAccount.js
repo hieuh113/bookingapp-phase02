@@ -3,11 +3,11 @@ import { ref, set } from "firebase/database";
 import bcrypt from "bcrypt";
 
 async function createAccount(req, res) {
-  const { username, password, email, phoneNumber } = req.body;
+  const { username, firstName, lastName, country, phoneNumber, gender, password, email, preference, location } = req.body;
 
   // Check required fields
-  if (!username || !password || !email || !phoneNumber) {
-    return res.status(400).json({ error: "All fields including hotelId are required" });
+  if (!username || !firstName || !lastName || !country || !phoneNumber || !gender || !password || !email || !preference || !location) {
+    return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
@@ -16,12 +16,18 @@ async function createAccount(req, res) {
     const userRef = ref(database, `Users/${username}`);
     await set(userRef, {
       username,
+      firstName,
+      lastName,
+      country,
+      phoneNumber,
+      gender,
       password: hashedPassword,
       email,
-      phoneNumber,
+      createAt: new Date().toISOString(), // Adding createAt with current timestamp
+      preference,
+      location,
     });
 
-    //valid
     res.status(201).json({ message: "Account created successfully" });
   } catch (error) {
     console.error("Error creating account:", error);

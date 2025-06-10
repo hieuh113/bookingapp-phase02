@@ -8,6 +8,15 @@ import { resetPassword } from './components/Account/resetpassword.js';
 import { sendResetEmail } from './components/Account/sendresetemail.js';
 import { googleLogin, facebookLogin } from './components/Account/socialLogin.js';
 import { login } from './components/Account/login.js';
+import { createIssue } from './components/Issue/createIssue.js';
+import { updateIssue } from './components/Issue/updateIssue.js';
+import { listIssue } from './components/Issue/listIssue.js';
+import { deleteIssue } from './components/Issue/deleteIssue.js';
+import { createRoomType } from './components/RoomType/createRoomType.js';
+import { listRoomType } from './components/RoomType/listRoomType.js';
+import { updateRoomType } from './components/RoomType/updateRoomType.js';
+import { deleteRoomType } from './components/RoomType/deleteRoomType.js';
+
 
 config();
 
@@ -22,6 +31,7 @@ async function startServer() {
     res.send('Hello from the Express backend!');
   });
 
+  // Account management routes
   appExpress.post('/create-account', createAccount);
   appExpress.post('/store-confirmation-code', storeConfirmationCode);
   appExpress.post('/verify-confirmation-code', verifyConfirmationCode);
@@ -31,6 +41,19 @@ async function startServer() {
   appExpress.post('/login', login);
   appExpress.post('/login/google', googleLogin);
   appExpress.post('/login/facebook', facebookLogin);
+
+  // Issue management routes
+  appExpress.post('/create-issue', createIssue);
+  appExpress.post('/update-issue', updateIssue);
+  appExpress.get('/list-issue', listIssue);
+  appExpress.post('/delete-issue', deleteIssue);
+
+  // Room type management route
+  appExpress.post('/create-room-type', createRoomType);
+  appExpress.get('/list-room-type', listRoomType);
+  appExpress.post('/update-room-type', updateRoomType);
+  appExpress.post('/delete-room-type', deleteRoomType);
+
 
   appExpress.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);
