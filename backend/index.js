@@ -16,7 +16,10 @@ import { createRoomType } from './components/RoomType/createRoomType.js';
 import { listRoomType } from './components/RoomType/listRoomType.js';
 import { updateRoomType } from './components/RoomType/updateRoomType.js';
 import { deleteRoomType } from './components/RoomType/deleteRoomType.js';
-
+import { createDiscount } from './components/Discount/createDiscount.js';
+import { updateDiscount } from './components/Discount/updateDiscount.js';
+import { listDiscount } from './components/Discount/listDiscount.js';
+import { deleteDiscount } from './components/Discount/deleteDiscount.js';
 
 config();
 
@@ -54,6 +57,13 @@ async function startServer() {
   appExpress.post('/update-room-type', updateRoomType);
   appExpress.post('/delete-room-type', deleteRoomType);
 
+  // Discount management routes
+  appExpress.post('/create-discount', createDiscount);
+  appExpress.post('/update-discount', updateDiscount);
+  appExpress.get('/list-discount', listDiscount);
+  appExpress.post('/delete-discount', deleteDiscount);
+
+  
 
   appExpress.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);
