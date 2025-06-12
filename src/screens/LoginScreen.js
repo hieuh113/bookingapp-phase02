@@ -1,129 +1,92 @@
+// file: LoginScreen.js
+
 import React, { useState } from 'react';
-   import {
-     View,
-     Text,
-     StyleSheet,
-     TextInput,
-     TouchableOpacity,
-     KeyboardAvoidingView,
-     Platform,
-     ScrollView,
-     Alert,
-   } from 'react-native';
-   import { SafeAreaView } from 'react-native-safe-area-context';
-   import { Icon } from '@rneui/themed';
-   import { useDispatch } from 'react-redux';
-   import { loginSuccess } from '../redux/slices/authSlice';
-   import { firebaseApp } from '../../config/firebaseconfig';
-   import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
-   import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon } from '@rneui/themed';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../redux/slices/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-   // Firebase configuration
-   import {
-  REACT_NATIVE_FIREBASE_API_KEY,
-  REACT_NATIVE_FIREBASE_AUTH_DOMAIN,
-  REACT_NATIVE_FIREBASE_PROJECT_ID,
-  REACT_NATIVE_FIREBASE_STORAGE_BUCKET,
-  REACT_NATIVE_FIREBASE_MESSAGING_SENDER_ID,
-  REACT_NATIVE_FIREBASE_APP_ID,
-} from '@env';
 
-const firebaseConfig = {
-  apiKey: REACT_NATIVE_FIREBASE_API_KEY,
-  authDomain: REACT_NATIVE_FIREBASE_AUTH_DOMAIN,
-  projectId: REACT_NATIVE_FIREBASE_PROJECT_ID,
-  storageBucket: REACT_NATIVE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: REACT_NATIVE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: REACT_NATIVE_FIREBASE_APP_ID,
-};
+import { firebaseApp } from '../../config/firebaseconfig'; 
 
-   // Initialize Firebase
-   const googleProvider = new GoogleAuthProvider();
-   const facebookProvider = new FacebookAuthProvider();
-   googleProvider.addScope('email profile');
-   facebookProvider.addScope('email public_profile');
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
-   const LoginScreen = ({ navigation }) => {
-     const dispatch = useDispatch();
-     const [email, setEmail] = useState('');
-     const [password, setPassword] = useState('');
-     const [showPassword, setShowPassword] = useState(false);
+const LoginScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-     const handleLogin = async () => {
-       try {
-         const response = await fetch('http://192.168.0.105:3000/login', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ email, password }),
-         });
-         const data = await response.json();
-          console.log('--- PHẢN HỒI TỪ SERVER ---', JSON.stringify(data, null, 2));
 
-         if (!response.ok) {
-           throw new Error(data.error || 'Login failed');
-         }
+  const authClient = getAuth(firebaseApp);
 
-         if (data.token) {
-          await AsyncStorage.setItem('token', data.token);
-          console.log('Token saved to AsyncStorage:', data.idToken);
-          } else {
-            throw new Error('No ID token received');
-          }
 
-         // Dispatch login success action
-         dispatch(loginSuccess({ user: data.user, token: data.token }));
-         // Navigate to Main tab navigator
-         navigation.reset({
-           index: 0,
-           routes: [{ name: 'Main' }],
-         });
-       } catch (error) {
-         Alert.alert('Error', error.message || 'Invalid email or password');
-       }
-     };
+  const handleLogin = async () => {
+    try {
+      
+      const userCredential = await signInWithEmailAndPassword(authClient, email, password);
 
-     const handleSocialLogin = async (provider, endpoint) => {
-       try {
-         const result = await signInWithPopup(auth, provider);
-         const idToken = await result.user.getIdToken();
+      
+      const idToken = await userCredential.user.getIdToken();
 
-         // Send ID token to backend
-         const response = await fetch(`http://localhost:3000${endpoint}`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ idToken }),
-         });
-         const data = await response.json();
+      
+      const response = await fetch('http://192.168.0.105:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: idToken }), // Chỉ gửi idToken
+      });
+      
+      const data = await response.json();
 
-         if (!response.ok) {
-           throw new Error(data.error || 'Social login failed');
-         }
+      if (!response.ok) {
+        throw new Error(data.error || 'Login verification failed on server.');
+      }
 
-         // Dispatch login success action
-         dispatch(loginSuccess({
-           username: data.user.uid,
-           email: data.user.email,
-           displayName: data.user.displayName,
-         }));
-         // Navigate to Main tab navigator
-         navigation.reset({
-           index: 0,
-           routes: [{ name: 'Main' }],
-         });
-       } catch (error) {
-         console.error(`${provider.providerId} login error:`, error);
-         Alert.alert('Error', `Failed to login with ${provider.providerId}`);
-       }
-     };
+      
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+      } else {
+        throw new Error('Server did not return a session token.');
+      }
 
-     return (
+      
+      dispatch(loginSuccess({ user: data.user, token: data.token }));
+      
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+      
+    } catch (error) {
+      
+      Alert.alert('Lỗi đăng nhập', error.message);
+    }
+  };
+
+  
+  const handleSocialLogin = async () => {
+    Alert.alert("Tính năng đang phát triển", "Đăng nhập bằng mạng xã hội sẽ sớm được ra mắt.");
+  };
+
+  return (
        <SafeAreaView style={styles.container}>
          <KeyboardAvoidingView
            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
            style={styles.keyboardView}
          >
            <ScrollView contentContainerStyle={styles.scrollContent}>
-             {/* Logo and Welcome Text */}
              <View style={styles.header}>
                <View style={styles.logoContainer}>
                  <Icon name="bed" type="ionicon" size={60} color="#007BFF" />
@@ -132,7 +95,6 @@ const firebaseConfig = {
                <Text style={styles.subtitle}>Sign in to continue</Text>
              </View>
 
-             {/* Login Form */}
              <View style={styles.form}>
                <View style={styles.inputContainer}>
                  <Icon name="mail" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
@@ -180,7 +142,6 @@ const firebaseConfig = {
                </TouchableOpacity>
              </View>
 
-             {/* Social Login */}
              <View style={styles.socialContainer}>
                <View style={styles.divider}>
                  <View style={styles.dividerLine} />
@@ -191,20 +152,19 @@ const firebaseConfig = {
                <View style={styles.socialButtons}>
                  <TouchableOpacity
                    style={styles.socialButton}
-                   onPress={() => handleSocialLogin(googleProvider, '/login/google')}
+                   onPress={handleSocialLogin}
                  >
                    <Icon name="logo-google" type="ionicon" size={24} color="#DB4437" />
                  </TouchableOpacity>
                  <TouchableOpacity
                    style={styles.socialButton}
-                   onPress={() => handleSocialLogin(facebookProvider, '/login/facebook')}
+                   onPress={handleSocialLogin}
                  >
                    <Icon name="logo-facebook" type="ionicon" size={24} color="#4267B2" />
                  </TouchableOpacity>
                </View>
              </View>
 
-             {/* Register Link */}
              <View style={styles.registerContainer}>
                <Text style={styles.registerText}>Don't have an account? </Text>
                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
@@ -214,11 +174,12 @@ const firebaseConfig = {
            </ScrollView>
          </KeyboardAvoidingView>
        </SafeAreaView>
-     );
-   };
+  );
+};
 
-   const styles = StyleSheet.create({
-     container: {
+
+const styles = StyleSheet.create({
+  container: {
        flex: 1,
        backgroundColor: '#fff',
      },
@@ -339,6 +300,5 @@ const firebaseConfig = {
        fontSize: 14,
        fontWeight: 'bold',
      },
-   });
-
-   export default LoginScreen;
+});
+export default LoginScreen;

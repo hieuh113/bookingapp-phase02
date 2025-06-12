@@ -177,7 +177,6 @@ const ProfileScreen = ({ navigation }) => {
       
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#333' }]}>Account Information</Text>
-        
         <TouchableOpacity
           style={styles.infoItem}
           onPress={() => openEditModal('Name', user?.name || 'Guest User')}
@@ -192,19 +191,15 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.infoItem}
-          onPress={() => openEditModal('Email', user?.email || 'guest@example.com')}
-        >
-          <View style={styles.infoItemLeft}>
-            <Icon name="mail" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
-            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Email</Text>
-          </View>
-          <View style={styles.infoItemRight}>
-            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>{user?.email || 'guest@example.com'}</Text>
-            <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.infoItem}>
+        <View style={styles.infoItemLeft}>
+          <Icon name="mail" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
+          <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Email</Text>
+        </View>
+        <View style={styles.infoItemRight}>
+          <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>{user?.email || 'guest@example.com'}</Text>
+        </View>
+      </View>
         
         <TouchableOpacity
          style={styles.infoItem}
@@ -222,7 +217,7 @@ const ProfileScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoItemLeft}>
             <Icon name="lock-closed" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
-            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>{}</Text>
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Password</Text>
           </View>
           <View style={styles.infoItemRight}>
             <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>••••••••</Text>

@@ -1,56 +1,48 @@
-import { database } from "../config/firebaseconfig.js";
-import { ref, get, query, orderByChild, equalTo } from "firebase/database";
-import bcrypt from "bcrypt";
+
+import { auth, database } from "../config/firebaseconfig.js";
+import { ref, get } from "firebase/database";
 import jwt from "jsonwebtoken";
 
-   async function login(req, res) {
-     try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
+export const login = async (req, res) => {
+  try {
+    
+    const { idToken } = req.body;
 
-       const usersRef = ref(database, 'Users');
-       const userQuery = query(usersRef, orderByChild('email'), equalTo(email));
-       const snapshot = await get(userQuery);
-
-       if (!snapshot.exists()) {
-         return res.status(404).json({ error: 'User not found' });
-       }
-
-       let userData = null;
-       let uid = null;
-       snapshot.forEach((childSnapshot) => {
-         uid = childSnapshot.key;
-         userData = childSnapshot.val();
-       });
-       if (!uid || !userData) {
-      return res.status(500).json({ error: 'Could not retrieve user details from database.' });
+    if (!idToken) {
+      return res.status(400).json({ error: "ID Token is required." });
     }
 
-       // Verify password
-       const isPasswordValid = await bcrypt.compare(password, userData.password);
-       if (!isPasswordValid) {
-         return res.status(401).json({ error: 'Invalid password' });
-       }
+    // Dùng Admin SDK để xác thực idToken này.
+    
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
 
-       const payload = {uid: uid};
-       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
+    const userRef = ref(database, `Users/${uid}`);
+    const snapshot = await get(userRef);
 
-       // Return user data (excluding password)
-       res.status(200).json({
-         message: 'Login successful',
-         user: {
-           username: userData.username,
-           email: userData.email,
-           phoneNumber: userData.phoneNumber,
-         },
-         token: token,
-       });
-     } catch (err) {
-       console.error('Error in login:', err.message);
-       res.status(500).json({ error: 'Failed to login' });
-     }
-   }
+    if (!snapshot.exists()) {
+      return res.status(404).json({ error: 'User data not found in database.' });
+    }
+    const userData = snapshot.val();
+    
+    
+    const payload = { uid: uid };
+    const sessionToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-export { login };
+    
+    res.status(200).json({
+      message: 'Login successful',
+      user: userData,
+      token: sessionToken, // Gửi session token của bạn về
+    });
+
+  } catch (error) {
+    
+    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+      return res.status(401).json({ error: 'Invalid or expired ID token.' });
+    }
+    console.error('Error in login verification:', error);
+    res.status(500).json({ error: 'Internal server error during token verification.' });
+  }
+};

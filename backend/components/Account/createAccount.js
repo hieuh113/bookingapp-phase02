@@ -23,7 +23,7 @@ async function createAccount(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const userRef = ref(database, `Users/${uid}`);
+    const userRef = ref(database, `users/${uid}`);
     await set(userRef, {
       username : username,
       password: hashedPassword,
