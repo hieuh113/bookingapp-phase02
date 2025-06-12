@@ -3,6 +3,7 @@ import { ref, get, push, set } from "firebase/database";
 
 export async function createBooking(req, res) {
     try {
+        console.log("id: ", req.user.uid);
         const userID = req.user.uid;
         if (!userID) {
             return res.status(401).json({ error: "User ID not found in token." });
@@ -23,7 +24,7 @@ export async function createBooking(req, res) {
             return res.status(400).json({ error: "All booking fields are required." });
         }
 
-        const userRef = ref(db, `users/${userID}`);
+        const userRef = ref(db, `Users/${userID}`);
         const userSnapshot = await get(userRef);
         if (!userSnapshot.exists()) {
             return res.status(404).json({ error: "User not found." });

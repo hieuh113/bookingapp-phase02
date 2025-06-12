@@ -46,7 +46,7 @@ async function startServer() {
   appExpress.get('/user', verifyToken, async (req, res) => {
     try {
       const userId = req.user.uid; // Assuming the user ID is stored in the token
-      const userRef = ref(database, `users/${userId}`);
+      const userRef = ref(database, `Users/${userId}`);
       const snapshot = await get(userRef);
  
       if (!snapshot.exists()) {
@@ -63,7 +63,7 @@ async function startServer() {
   appExpress.put('/user', verifyToken, async (req, res) => {
     try {
       const userId = req.user.uid; // Assuming the user ID is stored in the token
-      const userRef = ref(database, `users/${userId}`);
+      const userRef = ref(database, `Users/${userId}`);
       await update(userRef, req.body);
       res.json({ message: 'User data updated successfully' });
     } catch (error) {
