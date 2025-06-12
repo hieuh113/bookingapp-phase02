@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Icon } from '@rneui/themed';
-import { logout } from '../redux/slices/authSlice';
+import { logout, updateUser } from '../redux/slices/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE_URL = 'http://192.168.0.105:3000'; // Replace with your actual API base URL
 
 const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -31,6 +33,69 @@ const ProfileScreen = ({ navigation }) => {
   const toggleDarkMode = () => setDarkMode(previousState => !previousState);
   const toggleEmailNotifications = () => setEmailNotifications(previousState => !previousState);
   
+   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        console.log('--- KIỂM TRA TOKEN ---');
+        console.log('Token lấy từ AsyncStorage:', token);
+        console.log('--------------------');
+        if (!token) {
+          console.error('No token found in AsyncStorage');
+          return 'NO TOKEN'}; 
+
+        const response = await fetch(`${API_BASE_URL}/user`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          dispatch(updateUser(data));
+        } else {
+          console.error("Lỗi khi tải profile:", data.error);
+        }
+      } catch (error) {
+        console.error("Lỗi mạng khi tải profile:", error);
+      }
+    };
+
+    fetchProfile();
+  }, [dispatch]);
+  
+  const handleSaveEdit = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token){
+        Alert.alert('Error', 'You must be logged in to save changes.');
+        return;
+      };
+
+      const fieldToUpdate = editField.toLowerCase();
+      const bodyPayload = {
+        [fieldToUpdate]: editValue,}
+      
+      const response = await fetch(`${API_BASE_URL}/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        dispatch(updateUser(bodyPayload));
+        Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật.');
+      } else {
+        throw new Error(data.error || 'Cập nhật thất bại');
+      }
+      } catch (error) {
+        Alert.alert('Lỗi', error.message);
+      } finally {
+        setShowEditModal(false); 
+      }
+    };
+
   const handleLogout = async () => {
     Alert.alert(
       'Logout',
@@ -63,9 +128,6 @@ const ProfileScreen = ({ navigation }) => {
     setShowEditModal(true);
   };
   
-  const handleSaveEdit = () => {
-    setShowEditModal(false);
-  };
   
   const renderEditModal = () => (
     <Modal
@@ -144,13 +206,15 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.infoItem}>
+        <TouchableOpacity
+         style={styles.infoItem}
+         onPress={() => openEditModal('Phone', user?.phoneNumber || '+1 (555) 123-4567')}>
           <View style={styles.infoItemLeft}>
             <Icon name="call" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
             <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Phone</Text>
           </View>
           <View style={styles.infoItemRight}>
-            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>+1 (555) 123-4567</Text>
+            <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>{user?.phoneNumber}</Text>
             <Icon name="chevron-forward" type="ionicon" size={20} color={darkMode ? '#fff' : '#CCC'} />
           </View>
         </TouchableOpacity>
@@ -158,7 +222,7 @@ const ProfileScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoItemLeft}>
             <Icon name="lock-closed" type="ionicon" size={20} color={darkMode ? '#fff' : '#666'} />
-            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>Password</Text>
+            <Text style={[styles.infoItemLabel, { color: darkMode ? '#fff' : '#333' }]}>{}</Text>
           </View>
           <View style={styles.infoItemRight}>
             <Text style={[styles.infoItemValue, { color: darkMode ? '#fff' : '#666' }]}>••••••••</Text>

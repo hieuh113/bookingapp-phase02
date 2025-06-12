@@ -8,12 +8,14 @@ import { resetPassword } from './components/Account/resetpassword.js';
 import { sendResetEmail } from './components/Account/sendresetemail.js';
 import { googleLogin, facebookLogin } from './components/Account/socialLogin.js';
 import { login } from './components/Account/login.js';
+import { verifyToken } from './components/middleware/verifyToken.js';
+import {get, ref, update} from 'firebase/database';
 
 config();
 
 async function startServer() {
   const appExpress = express();
-  const port = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3000;
 
   appExpress.use(express.json());
   appExpress.use(cors());
@@ -32,8 +34,38 @@ async function startServer() {
   appExpress.post('/login/google', googleLogin);
   appExpress.post('/login/facebook', facebookLogin);
 
-  appExpress.listen(port, () => {
-    console.log(`Backend server running at http://localhost:${port}`);
+  //UPDATE _ LE DUC ANH
+  appExpress.get('/user', verifyToken, async (req, res) => {
+    try {
+      const userId = req.user.uid; // Assuming the user ID is stored in the token
+      const userRef = ref(database, `users/${userId}`);
+      const snapshot = await get(userRef);
+ 
+      if (!snapshot.exists()) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const userData = snapshot.val();
+      res.json(userData);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  appExpress.put('/user', verifyToken, async (req, res) => {
+    try {
+      const userId = req.user.uid; // Assuming the user ID is stored in the token
+      const userRef = ref(database, `users/${userId}`);
+      await update(userRef, req.body);
+      res.json({ message: 'User data updated successfully' });
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+////////////////////////
+  appExpress.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend server running at http://192.168.0.105:${PORT}`);
   });
 }
 

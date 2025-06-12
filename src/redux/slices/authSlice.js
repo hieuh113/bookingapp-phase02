@@ -80,6 +80,9 @@ const authSlice = createSlice({
       state.error = null;
       state.resetPassword.error = null;
     },
+    updateUser: (state, action) => {
+    state.user = { ...state.user, ...action.payload };
+    },
   },
 });
 

@@ -1,13 +1,13 @@
-import { initializeApp } from 'firebase/app';
-import { getDatabase } from 'firebase/database';
-import { getStorage } from 'firebase/storage';
-import { getAuth } from'firebase/auth';
+import { initializeApp,cert} from 'firebase-admin/app';
+import { getDatabase } from 'firebase-admin/database';
+// import { getStorage } from 'firebase/storage';
+import { getAuth } from'firebase-admin/auth';
 import admin from 'firebase-admin';
 import serviceAccount from '../../serviceAccountKey.json' with { type: 'json' };
 
-admin.initializeApp({
+ const firebaseApp = initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://ai-planner-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "https://ai-planner-booking-default-rtdb.asia-southeast1.firebasedatabase.app/",
 });
 
 const firebaseConfig = {
@@ -21,8 +21,7 @@ const firebaseConfig = {
   measurementId: "G-FVHP2QZ8YZ"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
-const storage = getStorage(firebaseApp);
+// const storage = getStorage(firebaseApp);
 const auth = getAuth(firebaseApp); 
-export { firebaseApp, database, storage,auth };
+export { firebaseApp, database,auth };

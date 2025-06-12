@@ -14,8 +14,9 @@ import React, { useState } from 'react';
    import { Icon } from '@rneui/themed';
    import { useDispatch } from 'react-redux';
    import { loginSuccess } from '../redux/slices/authSlice';
-   import { initializeApp } from '../firebase/app';
+   import { firebaseApp } from '../../config/firebaseconfig';
    import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
+   import AsyncStorage from '@react-native-async-storage/async-storage';
 
    // Firebase configuration
    import {
@@ -37,8 +38,6 @@ const firebaseConfig = {
 };
 
    // Initialize Firebase
-   const app = initializeApp(firebaseConfig);
-   const auth = getAuth(app);
    const googleProvider = new GoogleAuthProvider();
    const facebookProvider = new FacebookAuthProvider();
    googleProvider.addScope('email profile');
@@ -52,19 +51,27 @@ const firebaseConfig = {
 
      const handleLogin = async () => {
        try {
-         const response = await fetch('http://localhost:3000/login', {
+         const response = await fetch('http://192.168.0.105:3000/login', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({ email, password }),
          });
          const data = await response.json();
+          console.log('--- PHẢN HỒI TỪ SERVER ---', JSON.stringify(data, null, 2));
 
          if (!response.ok) {
            throw new Error(data.error || 'Login failed');
          }
 
+         if (data.token) {
+          await AsyncStorage.setItem('token', data.token);
+          console.log('Token saved to AsyncStorage:', data.idToken);
+          } else {
+            throw new Error('No ID token received');
+          }
+
          // Dispatch login success action
-         dispatch(loginSuccess(data.user));
+         dispatch(loginSuccess({ user: data.user, token: data.token }));
          // Navigate to Main tab navigator
          navigation.reset({
            index: 0,
@@ -77,8 +84,6 @@ const firebaseConfig = {
 
      const handleSocialLogin = async (provider, endpoint) => {
        try {
-         // Note: signInWithPopup may not work on React Native; use signInWithRedirect for mobile
-         // For web testing, this works; for production, adapt for mobile
          const result = await signInWithPopup(auth, provider);
          const idToken = await result.user.getIdToken();
 

@@ -13,18 +13,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
-import { mockUsers } from '../data/mockUsers';
+import axios from 'axios';
+
+const API_URL = 'http://192.168.0.105:3000';
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleRegister = () => {
-    if (!name || !email || !password || !confirmPassword) {
+
+  const handleRegister = async () => {
+    if (!name || !email || !password || !confirmPassword || !phoneNumber) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -34,14 +38,29 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    // In a real app, you would make an API call to register the user
-    Alert.alert('Success', 'Registration successful! Please login.', [
+    const userData = {
+      username: name,
+      email: email,
+      phoneNumber: phoneNumber,
+      password: password,
+    };
+
+    try {
+      const response = await axios.post(`${API_URL}/create-account`, userData);
+      if (response.status === 201) {
+        Alert.alert('Success', 'Registration successful! Please login.', [
       {
         text: 'OK',
         onPress: () => navigation.navigate('Login'),
       },
-    ]);
-  };
+      ]);
+      }
+    } catch (error) {
+        console.log('Full registration error:', JSON.stringify(error, null, 2));
+        const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+        Alert.alert('Error', errorMessage);
+      }
+    }
 
   const handleSocialRegister = (provider) => {
     // In a real app, you would implement social registration here
@@ -89,6 +108,17 @@ const RegisterScreen = ({ navigation }) => {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Icon name="call" type="ionicon" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
               />
             </View>
 
