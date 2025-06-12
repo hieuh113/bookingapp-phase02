@@ -8,6 +8,11 @@ import { resetPassword } from './components/Account/resetpassword.js';
 import { sendResetEmail } from './components/Account/sendresetemail.js';
 import { googleLogin, facebookLogin } from './components/Account/socialLogin.js';
 import { login } from './components/Account/login.js';
+import { createBooking } from './components/Booking/createBooking.js';
+import { listBooking } from './components/Booking/listBooking.js';
+
+
+
 import { verifyToken } from './components/middleware/verifyToken.js';
 import {get, ref, update} from 'firebase/database';
 
@@ -33,8 +38,11 @@ async function startServer() {
   appExpress.post('/login', login);
   appExpress.post('/login/google', googleLogin);
   appExpress.post('/login/facebook', facebookLogin);
+  appExpress.post('/create-booking', verifyToken, createBooking);
+  appExpress.get('/my-booking', verifyToken, listBooking);
 
-  //UPDATE _ LE DUC ANH
+
+  // User profile routes
   appExpress.get('/user', verifyToken, async (req, res) => {
     try {
       const userId = req.user.uid; // Assuming the user ID is stored in the token
@@ -63,7 +71,7 @@ async function startServer() {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
-////////////////////////
+
   appExpress.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server running at http://192.168.0.105:${PORT}`);
   });
