@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,29 +12,59 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { mockBookings } from '../data/mockBookings';
 
+const API_BASE_URL = 'http://192.168.0.105:3000';
+
 const BookingHistoryScreen = ({ navigation }) => {
+  const [bookings, setBookings] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('date');
 
+  const fetchBookings = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/my-booking`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data  = await response.json();
+      if (!response.ok){
+        console.error('Failed to fetch bookings:', data);
+        return;
+      }
+      setBookings(data);
+    }catch(error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
   const statuses = ['All', 'Confirmed', 'Pending', 'Completed', 'Cancelled'];
 
-  const filteredBookings = mockBookings
+  const filteredBookings = bookings
     .filter(booking => {
+      const hotelName = booking.hotelName || '';
+      const roomType = booking.roomType || '';
       const matchesSearch = 
-        booking.hotelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.roomType.toLowerCase().includes(searchQuery.toLowerCase());
-      
+        hotelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        roomType.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'All' || booking.status === statusFilter;
-      
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.bookingDate) - new Date(a.bookingDate);
-      } else if (sortBy === 'price') {
-        return b.totalPrice - a.totalPrice;
-      }
+      if (sortBy === 'date') return new Date(b.bookingDate) - new Date(a.bookingDate);
+      if (sortBy === 'price') return b.totalPrice - a.totalPrice;
       return 0;
     });
 

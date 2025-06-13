@@ -12,7 +12,6 @@ export async function listBooking(req, res) {
 
         const bookingsRef = ref(db, 'bookings');
 
-        
         const userBookingsQuery = query(bookingsRef, orderByChild('UserID'), equalTo(UserID));
 
         const snapshot = await get(userBookingsQuery);

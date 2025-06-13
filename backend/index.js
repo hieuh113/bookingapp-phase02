@@ -10,13 +10,12 @@ import { googleLogin, facebookLogin } from './components/Account/socialLogin.js'
 import { login } from './components/Account/login.js';
 import { createBooking } from './components/Booking/createBooking.js';
 import { listBooking } from './components/Booking/listBooking.js';
-import { listHotels } from './components/Hotel/listHotels.js';
 
 
 
 import { verifyToken } from './components/middleware/verifyToken.js';
 import {get, ref, update} from 'firebase/database';
-import { app } from 'firebase-admin';
+// import { app } from 'firebase-admin';
 
 config();
 
@@ -40,8 +39,6 @@ async function startServer() {
   appExpress.post('/login', login);
   appExpress.post('/login/google', googleLogin);
   appExpress.post('/login/facebook', facebookLogin);
-
-  appExpress.get('/hotels', listHotels);
   appExpress.post('/create-booking', verifyToken, createBooking);
   appExpress.get('/my-booking', verifyToken, listBooking);
 
